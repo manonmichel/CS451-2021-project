@@ -1,11 +1,20 @@
 package cs451;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import cs451.Broadcast.BestEffortBroadcast;
+import cs451.Broadcast.UniformReliableBroadcast;
+import cs451.Messages.Message;
+import cs451.Messages.MessageType;
+import cs451.ProcessHandlers.FairlossLink;
+import cs451.ProcessHandlers.PerfectLink;
+
+import java.io.*;
 import java.net.Socket;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class Main {
+    private static PrintWriter printWriter = new PrintWriter(System.out);
 
     private static void handleSignal() {
         //immediately stop network packet processing
@@ -13,6 +22,7 @@ public class Main {
 
         //write/flush output file if necessary
         System.out.println("Writing output.");
+        printWriter.close();
     }
 
     private static void initSignalHandlers() {
@@ -24,9 +34,25 @@ public class Main {
         });
     }
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException, IOException {
         Parser parser = new Parser(args);
         parser.parse();
+
+        int nMsgs = 0;
+        int dstID = -1;
+
+        String configType = parser.getConfigType();
+        if(configType == "pl"){
+            nMsgs = parser.getnMsgs();
+            dstID = parser.getProcessIndex();
+        } else if(configType == "fifo"){
+            nMsgs = parser.getnMsgs();
+        } else {
+            System.out.println("Unknown Config");
+        }
+
+
+        int mask = String.valueOf(nMsgs).length();
 
         initSignalHandlers();
 
@@ -54,9 +80,62 @@ public class Main {
         System.out.println("===============");
         System.out.println(parser.config() + "\n");
 
+        System.out.println("Config content:");
+        System.out.println("===============");
+        System.out.println("Number of messages each process should send: " + nMsgs);
+        System.out.println("Index of the process that should receive the messages: " + dstID + "\n");
+
         System.out.println("Doing some initialization\n");
 
+        Host currentHost = parser.getCurrentHost();
+        List<Host> otherHosts = new ArrayList<Host>(parser.hosts());
+        otherHosts.remove(currentHost);
+
+        PerfectLink pl = new PerfectLink(currentHost);
+
+        printWriter = new PrintWriter(new FileWriter(parser.output()));
+
+        UniformReliableBroadcast urb = new UniformReliableBroadcast(pl, otherHosts, currentHost);
+
+        currentHost.init(nMsgs, printWriter, urb);
+
         System.out.println("Broadcasting and delivering messages...\n");
+
+        int expectedMsgs = nMsgs * otherHosts.size();
+
+        List<Integer> otherhostIDs = otherHosts.stream().map(Host::getId).collect(Collectors.toList());
+
+        System.out.println("Other hosts: " + otherhostIDs);
+
+        System.out.println("Expecting :" + expectedMsgs + " messages");
+
+        System.out.println("Config type :" + configType );
+
+
+
+        if(configType == "pl"){
+/*            Host dstHost = parser.getHostFromID(dstID);
+            if(currentHost.getId() != dstID){
+                currentHost.start();
+            }
+            else {
+                System.out.println("Receiving...");
+                currentHost.receive();
+            }*/
+        } else if(configType == "fifo"){
+            currentHost.start();
+            System.out.println("Receiving...");
+            //currentHost.receive(pl);
+        }
+
+
+
+
+
+        System.out.println("Signaling end of broadcasting messages");
+
+
+
 
         // After a process finishes broadcasting,
         // it waits forever for the delivery of messages.

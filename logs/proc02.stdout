@@ -1,0 +1,61 @@
+My PID: 38318
+
+From a new terminal type `kill -SIGINT 38318` or `kill -SIGTERM 38318` to stop processing packets
+
+My ID: 2
+
+List of resolved hosts is:
+==========================
+1
+Human-readable IP: 127.0.0.1
+Human-readable Port: 11001
+
+2
+Human-readable IP: 127.0.0.1
+Human-readable Port: 11002
+
+3
+Human-readable IP: 127.0.0.1
+Human-readable Port: 11003
+
+
+Path to output:
+===============
+/Users/manon/Library/Mobile Documents/com~apple~CloudDocs/MA3/DA/Project.nosync/CS451-2021-project/logs/proc02.output
+
+Path to config:
+===============
+logs/config
+
+Config content:
+===============
+Number of messages each process should send: 20
+Index of the process that should receive the messages: 1
+
+Doing some initialization
+
+Broadcasting and delivering messages...
+
+b 200
+b 201
+b 202
+b 203
+b 204
+b 205
+b 206
+b 207
+b 208
+b 209
+b 210
+b 211
+b 212
+b 213
+b 214
+b 215
+b 216
+b 217
+b 218
+b 219
+Signaling end of broadcasting messages
+Immediately stopping network packet processing.
+Writing output.

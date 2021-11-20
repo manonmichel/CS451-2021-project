@@ -70,4 +70,51 @@ public class Parser {
         return configParser.getPath();
     }
 
+    public String getConfigType(){
+        return configParser.getConfigType();
+    }
+
+    public int getnMsgs(){
+        return configParser.getnMsgs();
+    }
+
+    public int getProcessIndex(){
+        return configParser.getProcessIndex();
+    }
+
+/*    public int[] configContent() {
+        return new int[]{configParser.getnMsgs(), configParser.getProcessIndex()};
+    }*/
+
+    public Host getCurrentHost(){
+        Host currentHost = null;
+        for (Host host : hosts()){
+            if(host.getId() == myId()){
+                currentHost = host;
+            }
+        }
+
+        if(currentHost == null){
+            throw new IllegalStateException("This process has no corresponding host");
+        }
+
+        return currentHost;
+
+    }
+
+    public Host getHostFromID(int id) {
+        Host ret = null;
+        for(Host host: hosts()){
+            if(host.getId() == id){
+                ret = host;
+            }
+        }
+
+        if(ret == null){
+            throw new NullPointerException("No host found with given ID");
+        }
+
+        return ret;
+    }
+
 }
