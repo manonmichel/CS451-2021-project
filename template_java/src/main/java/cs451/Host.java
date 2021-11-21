@@ -21,9 +21,9 @@ public class Host implements Serializable{
     private int port = -1;
 
     // Keeps track of sent messages and whether they were acked or not
-    private transient final HashMap<Integer, Boolean> sent = new HashMap();
+    private transient final HashMap<String, Boolean> sent = new HashMap();
     // Keeps track of received messages
-    private transient final HashSet<Integer> received = new HashSet<>();
+    private transient final HashSet<String> received = new HashSet<>();
 
     private transient PrintWriter printWriter;
 
@@ -31,7 +31,7 @@ public class Host implements Serializable{
     private transient PerfectLink perfectLink;
 
     private int nMsgs ;
-    private int mask;
+    //private int mask;
 
     public void init(int nMsgs, PrintWriter printWriter, Broadcast broadcastMethod){
         this.nMsgs = nMsgs;
@@ -39,7 +39,7 @@ public class Host implements Serializable{
         this.broadcastMethod = broadcastMethod;
         this.perfectLink = broadcastMethod.getPerfectLink();
 
-        this.mask = String.valueOf(nMsgs).length();
+        //this.mask = String.valueOf(nMsgs).length();
     }
 
     public boolean populate(String idString, String ipString, String portString) {
@@ -86,61 +86,42 @@ public class Host implements Serializable{
 
     public void start() {
         for (int i = 1; i <= nMsgs; i++) {
-            int seqn = (int) (id*Math.pow(10,mask) + i);
-            Message m = new Message(seqn, Integer.toString(i), MessageType.BROADCAST, this);
-            /*printWriter.println("b " + seqn);
-            System.out.println("b " + seqn);*/
+
+            Message m = new Message(i, Integer.toString(i), MessageType.BROADCAST, this);
+
             printWriter.println("b " + i);
+            System.out.println("b " + i);
 
-            //sent.put(seqn, false);
+            String sign = m.getSignature();
+            sent.put(sign, false);
 
-            // PL
-            //pl.send(m);
 
-            // DEBUGGING
-            if(seqn == 300){
-                System.out.println("Message 300 is in " + "host:start");
-            }
 
-            // Best effort
+            // URB
             broadcastMethod.broadcast(m);
         }
 
         this.receive();
 
-/*        while(received.size() <= nMsgs*3){
-        }*/
+
     }
 
 
 
     public void deliver(Message msg){
-        // DEBUGGING
-        if(msg.getSeqNumber() == 300){
-            System.out.println("Message 300 is in " + "host:deliver");
-        }
+
+        if (!received.contains(msg.getSignature())) {
+            received.add(msg.getSignature());
 
 
-        if (!received.contains(msg.getSeqNumber())) {
-            received.add(msg.getSeqNumber());
-
-            // extract OG seqn
-            int trueSeqN = getTrueSeqN(msg);
-
-            printWriter.println("d " + msg.getSrcHost().getId() + " " + trueSeqN);
-            System.out.println("d " + msg.getSrcHost().getId() + " " + trueSeqN + " | " + msg.getSeqNumber() );
+            printWriter.println("d " + msg.getSrcHost().getId() + " " + msg.getSeqNumber());
+            System.out.println("d " + msg.getSrcHost().getId() + " " + msg.getSeqNumber() + " | " + msg.getSignature() );
         }
     }
 
-    public void deliverAck(Message ack){
-        if (!sent.get(ack.getSeqNumber())) {
-            sent.replace(ack.getSeqNumber(), true);
-        }
-        sent.putIfAbsent(ack.getSeqNumber(), true);
-    }
 
     public boolean ackReceived(Message msg){
-        return sent.get(msg.getSeqNumber());
+        return sent.get(msg.getSignature());
     }
 
     public void receive(){
@@ -149,24 +130,24 @@ public class Host implements Serializable{
         }
     }
 
-    public void notifySent(Message msg){
-        int i = getTrueSeqN(msg);
-        int seqn = msg.getSeqNumber();
-
-
-        System.out.println("b " + i + " | " + seqn + " ------");
-        sent.put(seqn, false);
-    }
-
-    public int getTrueSeqN(Message msg){
-        return (int) ( msg.getSeqNumber() - msg.getSrcHost().getId() * Math.pow(10,mask));
-    }
 
     public Broadcast getBroadcastMethod() {
         return broadcastMethod;
     }
 
-    public int getMask(){
-        return mask;
+
+    @Override
+    public boolean equals(Object h1){
+        if(h1 instanceof Host){
+            Host otherHost = (Host)(h1);
+            return this.id == otherHost.getId() ;
+        }else{
+            return false;
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        return id;
     }
 }

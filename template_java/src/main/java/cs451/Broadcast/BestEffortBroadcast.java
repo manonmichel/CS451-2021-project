@@ -2,6 +2,7 @@ package cs451.Broadcast;
 
 import cs451.Host;
 import cs451.Messages.Message;
+import cs451.Messages.MessageType;
 import cs451.ProcessHandlers.PerfectLink;
 
 import java.io.Serializable;
@@ -23,17 +24,9 @@ public class BestEffortBroadcast implements Broadcast, Serializable {
     }
 
     public void broadcast(Message msg) {
-        // DEBUGGING
-        if(msg.getSeqNumber() == 300){
-            System.out.println("Message 300 is in " + "beb:broadcast");
-        }
 
         for (Host receivingHost : hosts) {
-            Message msgCopy = msg.createCopy();
-            msgCopy.setDstHost(receivingHost);
-            int dstMask = (int) (currentHost.getId()*Math.pow(10,currentHost.getMask()+1));
-            msgCopy.setSeqNumber(msg.getSeqNumber() + dstMask);
-            currentHost.notifySent(msgCopy);
+            Message msgCopy = new Message(msg.getSeqNumber(), msg.getContent(), msg.getMsgType(), msg.getSrcHost(), receivingHost);
             perfectLink.send(msgCopy);
 
         }
@@ -41,10 +34,6 @@ public class BestEffortBroadcast implements Broadcast, Serializable {
     }
 
     public void deliver(Message msg) {
-        // DEBUGGING
-/*        if(msg.getSeqNumber() == 300){
-            System.out.println("Message 300 is in " + "beb:deliver");
-        }*/
 
         broadcastMethod.deliver(msg);
 

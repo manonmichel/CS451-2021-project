@@ -3,26 +3,30 @@ package cs451.Messages;
 import cs451.Host;
 
 import java.io.*;
+import java.util.Comparator;
 
 public class Message implements Serializable {
 
-    private int SeqNumber;
+    private final int SeqNumber;
+    private String signature;
     private final String content;
-    private Host srcHost, dstHost;
+    private final Host srcHost;
+    private Host dstHost;
     private final MessageType msgType ;
 
 
-    public Message(int SeqNumber, String content, MessageType msgType){
+/*    public Message(int SeqNumber, String content, MessageType msgType){
         this.content = content ;
         this.SeqNumber = SeqNumber ;
         this.msgType = msgType;
-    }
+    }*/
 
     public Message(int SeqNumber, String content, MessageType msgType, Host srcHost){
         this.content = content ;
         this.SeqNumber = SeqNumber ;
         this.srcHost = srcHost;
         this.msgType = msgType;
+        setSignature();
     }
 
     public Message(int SeqNumber, String content, MessageType msgType, Host srcHost, Host dstHost){
@@ -31,8 +35,26 @@ public class Message implements Serializable {
         this.msgType = msgType;
         this.srcHost = srcHost;
         this.dstHost = dstHost ;
+        setSignature();
     }
 
+    private void setSignature(){
+        String sign = "";
+        switch (msgType) {
+            case BROADCAST:
+                sign = srcHost.getId() + "." + SeqNumber;
+                break;
+            case ACK:
+                sign = dstHost.getId() + "." + SeqNumber;
+                break;
+        }
+
+        this.signature = sign;
+    }
+
+    public String getSignature(){
+        return signature;
+    }
 
     public int getSeqNumber() { return SeqNumber;}
 
@@ -58,30 +80,35 @@ public class Message implements Serializable {
 
     public String getDstIP(){ return this.dstHost.getIp(); }*/
 
-    public boolean compare(Message m1, Message m2){
-        return m2.SeqNumber == m1.SeqNumber && m1.content == m2.content && m1.msgType == m2.msgType ;
-    }
+/*
 
     public Message createCopy(){
-        if(this.srcHost == null){
-            return new Message(this.SeqNumber, this.content, this.msgType);
-        } else if(this.dstHost == null){
+        if(this.dstHost == null){
             return new Message(this.SeqNumber, this.content, this.msgType, this.srcHost);
         } else {
             return new Message(this.SeqNumber, this.content, this.msgType, this.srcHost, this.dstHost);
         }
+    }*/
+
+
+
+    public MessageType getMessageType(){
+        return msgType;
     }
 
-    public void setDstHost(Host dstHost) {
-        this.dstHost = dstHost;
+    @Override
+    public boolean equals(Object m1){
+        if(m1 instanceof Message){
+            Message otherMsg = (Message)(m1);  // Removed comparison of message type because otherwise the comparison needed in PerfectLinks is faulty
+            return this.signature == otherMsg.getSignature() && this.msgType == otherMsg.getMsgType() && this.content == otherMsg.getContent() && this.srcHost == otherMsg.getSrcHost()  && this.dstHost == otherMsg.getDstHost();
+        }else{
+            return false;
+        }
     }
 
-    public void setSrcHost(Host srcHost) {
-        this.srcHost = srcHost;
-    }
-
-    public void setSeqNumber(int seqNumber){
-        this.SeqNumber = seqNumber;
+    @Override
+    public int hashCode() {
+        return super.hashCode();
     }
 
     public byte[] msgToBytes() throws IOException {
@@ -137,7 +164,22 @@ public class Message implements Serializable {
     }
 
     public Message genAck(){
-        return new Message(this.getSeqNumber(), "", MessageType.ACK, this.dstHost, this.srcHost);
+        if (this.msgType == MessageType.ACK) {
+            throw new IllegalCallerException("Cannot generate an ACK message from an already ACK type");
+        }
+        Message ack = new Message(this.SeqNumber, this.content, MessageType.ACK, this.dstHost, this.srcHost);
+        //ack.setSignature();
+        return ack;
+    }
+
+    /**
+     * String representation of a Message
+     *
+     * @return
+     */
+    @Override
+    public String toString() {
+        return msgType + " " + signature + " " + srcHost.getId() + " " + dstHost.getId() ;
     }
 
 }

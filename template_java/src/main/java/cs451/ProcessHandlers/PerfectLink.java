@@ -4,6 +4,7 @@ import cs451.Broadcast.Broadcast;
 import cs451.Host;
 import cs451.Messages.Message;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -14,10 +15,13 @@ public class PerfectLink{
 
     private final int timeout = 1;
 
+
     // Keeps track of sent messages and whether they were acked or not
-    private final HashMap<Integer, Boolean> sent = new HashMap();
+    private final HashMap<Host, HashMap<String, Boolean>> sent = new HashMap();
     // Keeps track of received messages
-    private final HashSet<Integer> received = new HashSet<>();
+    private final HashSet<String> received = new HashSet<>();
+    // Keeps track of received acks
+    private final HashSet<String> receivedACKS = new HashSet<>();
 
     Broadcast broadcastMethod;
 
@@ -36,31 +40,47 @@ public class PerfectLink{
             return;
         }
 
-/*        // DEBUGGING
-        if(msg.getSeqNumber() == 300){
-            System.out.println("Message 300 is in " + "pl:receive");
-        }*/
+        Host srcHost = msg.getSrcHost();
+        String sign = msg.getSignature();
 
         switch (msg.getMsgType()) {
             case BROADCAST:
-                this.deliver(msg);
+                //System.out.println("pl:receive  : " + (this.currentHost.getId() == msg.getSrcHost().getId()));
+                if(!received.contains(sign)){
+                    received.add(sign);
+                    deliver(msg);
+
+                }
                 fll.send(msg.genAck());
+
+
                 return;
 
             case ACK:
-                //msg.getDstHost()
-                currentHost.deliverAck(msg);
+
+                sent.putIfAbsent(srcHost, new HashMap<>());
+                if(!sent.get(srcHost).containsKey(sign)){
+                    System.out.println("pl:receive - Received an ack for a message that was never sent. :(");
+                    System.out.println(sent);
+                    System.out.println(msg.toString());
+                }
+
+                sent.get(srcHost).replace(sign, true);
+
                 return;
         }
 
     }
 
     public void send(Message msg) {
-        if (this.currentHost == msg.getDstHost()) {
+        Host dstHost = msg.getDstHost();
+        if (this.currentHost == dstHost) {
             deliver(msg);
         } else {
            // fll.send(msg);
-            while(!currentHost.ackReceived(msg)){
+            sent.putIfAbsent(dstHost, new HashMap<>());
+            sent.get(dstHost).put(msg.getSignature(), false);
+            while(!sent.get(dstHost).get(msg.getSignature())){
                 fll.send(msg);
 
                 try {
@@ -74,10 +94,6 @@ public class PerfectLink{
             }
         }
 
-/*        // DEBUGGING
-        if(msg.getSeqNumber() == 300){
-            System.out.println("Message 300 is in " + "pl:send");
-        }*/
     }
 
     public void deliver(Message message) {

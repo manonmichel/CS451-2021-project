@@ -12,11 +12,11 @@ import java.util.List;
 public class UniformReliableBroadcast implements Broadcast{
 
     // Keeps track of delivered messages
-    private transient final HashMap<Integer, List<Host>> acked ;
+    private transient final HashMap<String, List<Host>> acked ;
     // Keeps track of delivered messages
-    private transient final HashSet<Integer> delivered ;
+    private transient final HashSet<String> delivered ;
     // Keeps track of pending messages
-    private transient final HashSet<Integer> pending ;
+    private transient final HashSet<String> pending ;
 
     private transient PerfectLink pl;
     private transient BestEffortBroadcast beb;
@@ -33,7 +33,7 @@ public class UniformReliableBroadcast implements Broadcast{
 
         this.hosts = hosts;
         this.currentHost = currentHost;
-        this.MIN_ACK = ((hosts.size()+1) / 2) + 1 ;
+        this.MIN_ACK = ((hosts.size()+1) / 2)  ;
 
         this.pl = pl;
         this.beb = new BestEffortBroadcast(pl, hosts, this, currentHost);
@@ -42,12 +42,9 @@ public class UniformReliableBroadcast implements Broadcast{
 
     @Override
     public void broadcast(Message message) {
-        // DEBUGGING
-/*        if(message.getSeqNumber() == 300){
-            System.out.println("Message 300 is in " + "urb:broadcast");
-        }*/
 
-        pending.add(message.getSeqNumber());
+
+        pending.add(message.getSignature());
         beb.broadcast(message);
 
 
@@ -55,31 +52,27 @@ public class UniformReliableBroadcast implements Broadcast{
 
     // Must make sure that N/2 ACKS before delivering
     public void deliver(Message message) {
-        // DEBUGGING
-/*        if(message.getSeqNumber() == 300){
-            System.out.println("Message 300 is in " + "urb:deliver");
-        }*/
 
-        int seqn = message.getSeqNumber();
-        if(!delivered.contains(seqn)){
 
-            if (!acked.getOrDefault(seqn, new ArrayList<>()).contains(message.getSrcHost())) {
-                acked.putIfAbsent(seqn, new ArrayList<>());
-                acked.get(seqn).add(message.getSrcHost());
-                //System.out.println("Deliverable? : " + checkDeliverable(seqn));
-                if(checkDeliverable(seqn)){
-                    delivered.add(seqn);
-                    //acked.remove(seqn);
-                    pending.remove(seqn);
-                    currentHost.deliver(message); //Not sure about this
+        String sign = message.getSignature();
+        if(!delivered.contains(sign)){
+            Host srcHost = message.getSrcHost();
+            if (!acked.getOrDefault(sign, new ArrayList<>()).contains(srcHost)) {
+                acked.putIfAbsent(sign, new ArrayList<>());
+                acked.get(sign).add(srcHost);
+
+                if(checkDeliverable(sign)){
+                    delivered.add(sign);
+                    pending.remove(sign);
+                    currentHost.deliver(message);
                 }
 
 
             }
 
             //If not already forwarded, we forward it by broadcasting it.
-            if (!pending.contains(seqn) && !delivered.contains(seqn)) {
-                pending.add(seqn);
+            if (!pending.contains(sign) && !delivered.contains(sign)) {
+                pending.add(sign);
                 beb.broadcast(message);
             }
 
@@ -95,7 +88,7 @@ public class UniformReliableBroadcast implements Broadcast{
     }
 
     //Checks if the Message can be delivered or not
-    private boolean checkDeliverable(int seqn) {
-        return acked.get(seqn) != null && acked.get(seqn).size() >= MIN_ACK ;
+    private boolean checkDeliverable(String sign) {
+        return acked.get(sign) != null && acked.get(sign).size() >= MIN_ACK ;
     }
 }
