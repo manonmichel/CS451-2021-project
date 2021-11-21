@@ -21,39 +21,37 @@ public class UniformReliableBroadcast implements Broadcast{
     private transient PerfectLink pl;
     private transient BestEffortBroadcast beb;
     private final List<Host> hosts;
-    private final Host currentHost;
+
+    private Broadcast broadcastMethod;
+
 
     // serves as a failure detector
     private final int MIN_ACK;
 
-    public UniformReliableBroadcast(PerfectLink pl, List<Host> hosts, Host currentHost){
+    public UniformReliableBroadcast(PerfectLink pl, List<Host> hosts, Broadcast broadcastMethod){
         this.acked = new HashMap<>();
         this.delivered = new HashSet<>();
         this.pending = new HashSet<>();
 
+        this.broadcastMethod = broadcastMethod;
+
         this.hosts = hosts;
-        this.currentHost = currentHost;
+
         this.MIN_ACK = ((hosts.size()+1) / 2)  ;
 
         this.pl = pl;
-        this.beb = new BestEffortBroadcast(pl, hosts, this, currentHost);
+        this.beb = new BestEffortBroadcast(pl, hosts, this);
 
     }
 
     @Override
     public void broadcast(Message message) {
-
-
         pending.add(message.getSignature());
         beb.broadcast(message);
-
-
     }
 
     // Must make sure that N/2 ACKS before delivering
     public void deliver(Message message) {
-
-
         String sign = message.getSignature();
         if(!delivered.contains(sign)){
             Host srcHost = message.getSrcHost();
@@ -63,11 +61,10 @@ public class UniformReliableBroadcast implements Broadcast{
 
                 if(checkDeliverable(sign)){
                     delivered.add(sign);
+                    acked.remove(sign);
                     pending.remove(sign);
-                    currentHost.deliver(message);
+                    broadcastMethod.deliver(message);
                 }
-
-
             }
 
             //If not already forwarded, we forward it by broadcasting it.
@@ -75,11 +72,7 @@ public class UniformReliableBroadcast implements Broadcast{
                 pending.add(sign);
                 beb.broadcast(message);
             }
-
         }
-
-
-
     }
 
     @Override

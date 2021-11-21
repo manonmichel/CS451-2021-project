@@ -2,7 +2,6 @@ package cs451.ProcessHandlers;
 
 import cs451.Host;
 import cs451.Messages.Message;
-import cs451.Messages.MessageType;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -15,10 +14,10 @@ public class FairlossLink implements Serializable {
 
     private DatagramSocket socket;
 
-    private final int timeout = 10;
+    private final int timeout = 2;
 
-    private final int port ;
-    private final String ip ;
+    private final int port;
+    private final String ip;
     private final int id;
 
     private final HashMap<Message, byte[]> cache = new HashMap(); // cache to avoid reserializing messages
@@ -29,8 +28,8 @@ public class FairlossLink implements Serializable {
         this.ip = currentHost.getIp();
         this.port = currentHost.getPort();
 
-        try{
-            this.socket = new DatagramSocket(this.port, InetAddress.getByName(this.ip)) ;
+        try {
+            this.socket = new DatagramSocket(this.port, InetAddress.getByName(this.ip));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -63,29 +62,24 @@ public class FairlossLink implements Serializable {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        if(udpPacket.getData() == null){
+        if (udpPacket.getData() == null) {
             return null;
         }
-
-/*        // DEBUGGING
-        if(Message.msgFromBytes(udpPacket.getData()).getSeqNumber() == 300){
-            System.out.println("Message 300 is in " + "fl:receive");
-        }*/
 
         return Message.msgFromBytes(udpPacket.getData());
     }
 
-    public void send(Message msg){
-        try{
+    public void send(Message msg) {
+        try {
             byte[] msgAsBytes = cache.computeIfAbsent(msg, m -> {   // Need this because msgToBytes() throws an exception
                 try {
                     return m.msgToBytes();
-                }catch(IOException e) {
+                } catch (IOException e) {
                     e.printStackTrace();
                     return null;
                 }
             });
-            if(msgAsBytes == null){
+            if (msgAsBytes == null) {
                 throw new NullPointerException("Null byte array");
             }
             DatagramPacket udpPacket = new DatagramPacket(msgAsBytes, msgAsBytes.length, InetAddress.getByName(msg.getDstHost().getIp()), msg.getDstHost().getPort());

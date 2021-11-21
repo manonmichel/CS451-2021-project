@@ -4,11 +4,10 @@ import cs451.Broadcast.Broadcast;
 import cs451.Host;
 import cs451.Messages.Message;
 
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 
-public class PerfectLink{
+public class PerfectLink {
 
     private final FairlossLink fll;
     private final Host currentHost;
@@ -25,7 +24,7 @@ public class PerfectLink{
 
     Broadcast broadcastMethod;
 
-    public PerfectLink(Host currentHost){
+    public PerfectLink(Host currentHost) {
         this.fll = new FairlossLink(currentHost);
         this.currentHost = currentHost;
     }
@@ -36,7 +35,7 @@ public class PerfectLink{
 
         msg = fll.receive();
 
-        if(msg == null){
+        if (msg == null) {
             return;
         }
 
@@ -45,26 +44,20 @@ public class PerfectLink{
 
         switch (msg.getMsgType()) {
             case BROADCAST:
-                //System.out.println("pl:receive  : " + (this.currentHost.getId() == msg.getSrcHost().getId()));
-                if(!received.contains(sign)){
+                if (!received.contains(sign)) {
                     received.add(sign);
                     deliver(msg);
-
                 }
                 fll.send(msg.genAck());
-
-
                 return;
 
             case ACK:
-
                 sent.putIfAbsent(srcHost, new HashMap<>());
-                if(!sent.get(srcHost).containsKey(sign)){
-                    System.out.println("pl:receive - Received an ack for a message that was never sent. :(");
+                if (!(sent.get(srcHost).containsKey(sign))) {
+/*                    System.out.println("pl:receive - Received an ack for a message that was never sent. :(");
                     System.out.println(sent);
-                    System.out.println(msg.toString());
+                    System.out.println(msg.toString());*/
                 }
-
                 sent.get(srcHost).replace(sign, true);
 
                 return;
@@ -77,18 +70,16 @@ public class PerfectLink{
         if (this.currentHost == dstHost) {
             deliver(msg);
         } else {
-           // fll.send(msg);
+            // fll.send(msg);
             sent.putIfAbsent(dstHost, new HashMap<>());
             sent.get(dstHost).put(msg.getSignature(), false);
-            while(!sent.get(dstHost).get(msg.getSignature())){
+            while (!sent.get(dstHost).get(msg.getSignature())) {
                 fll.send(msg);
-
                 try {
                     Thread.sleep(timeout);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-
                 //receive ack
                 receive();
             }
@@ -100,28 +91,12 @@ public class PerfectLink{
         broadcastMethod.deliver(message);
     }
 
-    public void setBroadcastMethod(Broadcast broadcastMethod){
+/*    public void notifyAck(Message ack) {
+        broadcast.remove(ack.getUid());
+    }*/
+
+    public void setBroadcastMethod(Broadcast broadcastMethod) {
         this.broadcastMethod = broadcastMethod;
     }
 
-/*    public void send(Message msg, Host dstHost) {
-        msg.setDstHost(dstHost);
-
-        if (this.currentHost == msg.getDstHost()) {
-            currentHost.deliver(msg);
-        } else {
-            while(!currentHost.ackReceived(msg)){
-                fll.send(msg);
-
-                try {
-                    Thread.sleep(timeout);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
-                //receive ack
-                receive();
-            }
-        }
-    }*/
 }

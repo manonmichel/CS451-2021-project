@@ -1,6 +1,6 @@
-My PID: 38319
+My PID: 19415
 
-From a new terminal type `kill -SIGINT 38319` or `kill -SIGTERM 38319` to stop processing packets
+From a new terminal type `kill -SIGINT 19415` or `kill -SIGTERM 19415` to stop processing packets
 
 My ID: 3
 
@@ -29,33 +29,16 @@ logs/config
 
 Config content:
 ===============
-Number of messages each process should send: 20
-Index of the process that should receive the messages: 1
+Number of messages each process should send: 10
+Index of the process that should receive the messages: -1
 
 Doing some initialization
 
 Broadcasting and delivering messages...
 
-b 300
-b 301
-b 302
-b 303
-b 304
-b 305
-b 306
-b 307
-b 308
-b 309
-b 310
-b 311
-b 312
-b 313
-b 314
-b 315
-b 316
-b 317
-b 318
-b 319
-Signaling end of broadcasting messages
+Other hosts: [1, 2]
+Expecting :20 messages
+Config type :fifo
+b 1
 Immediately stopping network packet processing.
 Writing output.

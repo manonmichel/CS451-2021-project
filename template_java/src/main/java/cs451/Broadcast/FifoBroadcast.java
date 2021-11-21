@@ -5,23 +5,22 @@ import cs451.Messages.Message;
 import cs451.ProcessHandlers.PerfectLink;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicIntegerArray;
 
-public class FifoBroadcast implements Broadcast{
+public class FifoBroadcast implements Broadcast {
 
 
     private UniformReliableBroadcast urb;
     private PerfectLink pl;
-    private ArrayList order;
+    //private ArrayList order;
+    private Host currentHost;
 
 
-    public FifoBroadcast(PerfectLink perfectLink, List<Host> hosts, Host currentHost){
-        this.urb = new UniformReliableBroadcast(perfectLink, hosts, currentHost);
+    public FifoBroadcast(PerfectLink perfectLink, List<Host> hosts, Host currentHost) {
+        this.urb = new UniformReliableBroadcast(perfectLink, hosts, this);
         this.pl = perfectLink;
-        this.order = new ArrayList<Integer>(hosts.size());
+        this.currentHost = currentHost;
+        //this.order = new ArrayList<Integer>(hosts.size());
     }
 
 
@@ -32,9 +31,8 @@ public class FifoBroadcast implements Broadcast{
 
     @Override
     public void deliver(Message message) {
-        int srcID = message.getSrcHost().getId();
-
-
+        //int srcID = message.getSrcHost().getId();
+        currentHost.deliver(message);
     }
 
     @Override

@@ -12,7 +12,7 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.HashSet;
 
-public class Host implements Serializable{
+public class Host implements Serializable {
 
     private static final String IP_START_REGEX = "/";
 
@@ -30,16 +30,14 @@ public class Host implements Serializable{
     private transient Broadcast broadcastMethod;
     private transient PerfectLink perfectLink;
 
-    private int nMsgs ;
-    //private int mask;
+    private int nMsgs;
 
-    public void init(int nMsgs, PrintWriter printWriter, Broadcast broadcastMethod){
+
+    public void init(int nMsgs, PrintWriter printWriter, Broadcast broadcastMethod) {
         this.nMsgs = nMsgs;
         this.printWriter = printWriter;
         this.broadcastMethod = broadcastMethod;
         this.perfectLink = broadcastMethod.getPerfectLink();
-
-        //this.mask = String.valueOf(nMsgs).length();
     }
 
     public boolean populate(String idString, String ipString, String portString) {
@@ -95,53 +93,38 @@ public class Host implements Serializable{
             String sign = m.getSignature();
             sent.put(sign, false);
 
-
-
             // URB
             broadcastMethod.broadcast(m);
         }
 
         this.receive();
 
-
     }
 
 
-
-    public void deliver(Message msg){
-
+    public void deliver(Message msg) {
         if (!received.contains(msg.getSignature())) {
             received.add(msg.getSignature());
 
-
             printWriter.println("d " + msg.getSrcHost().getId() + " " + msg.getSeqNumber());
-            System.out.println("d " + msg.getSrcHost().getId() + " " + msg.getSeqNumber() + " | " + msg.getSignature() );
+            System.out.println("d " + msg.getSrcHost().getId() + " " + msg.getSeqNumber() + " | " + msg.getSignature());
         }
     }
 
 
-    public boolean ackReceived(Message msg){
-        return sent.get(msg.getSignature());
-    }
-
-    public void receive(){
-        while(true){
+    public void receive() {
+        while (true) {
             perfectLink.receive();
         }
     }
 
 
-    public Broadcast getBroadcastMethod() {
-        return broadcastMethod;
-    }
-
-
     @Override
-    public boolean equals(Object h1){
-        if(h1 instanceof Host){
-            Host otherHost = (Host)(h1);
-            return this.id == otherHost.getId() ;
-        }else{
+    public boolean equals(Object h1) {
+        if (h1 instanceof Host) {
+            Host otherHost = (Host) (h1);
+            return this.id == otherHost.getId();
+        } else {
             return false;
         }
     }

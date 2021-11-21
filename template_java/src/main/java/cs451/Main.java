@@ -1,17 +1,11 @@
 package cs451;
 
-import cs451.Broadcast.BestEffortBroadcast;
-import cs451.Broadcast.UniformReliableBroadcast;
-import cs451.Messages.Message;
-import cs451.Messages.MessageType;
-import cs451.ProcessHandlers.FairlossLink;
+import cs451.Broadcast.FifoBroadcast;
 import cs451.ProcessHandlers.PerfectLink;
 
 import java.io.*;
-import java.net.Socket;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class Main {
     private static PrintWriter printWriter = new PrintWriter(System.out);
@@ -42,17 +36,15 @@ public class Main {
         int dstID = -1;
 
         String configType = parser.getConfigType();
-        if(configType == "pl"){
+        if (configType.equals("pl")) {
             nMsgs = parser.getnMsgs();
             dstID = parser.getProcessIndex();
-        } else if(configType == "fifo"){
+        } else if (configType.equals("fifo")) {
             nMsgs = parser.getnMsgs();
         } else {
             System.out.println("Unknown Config");
         }
 
-
-        int mask = String.valueOf(nMsgs).length();
 
         initSignalHandlers();
 
@@ -64,7 +56,7 @@ public class Main {
         System.out.println("My ID: " + parser.myId() + "\n");
         System.out.println("List of resolved hosts is:");
         System.out.println("==========================");
-        for (Host host: parser.hosts()) {
+        for (Host host : parser.hosts()) {
             System.out.println(host.getId());
             System.out.println("Human-readable IP: " + host.getIp());
             System.out.println("Human-readable Port: " + host.getPort());
@@ -95,9 +87,10 @@ public class Main {
 
         printWriter = new PrintWriter(new FileWriter(parser.output()));
 
-        UniformReliableBroadcast urb = new UniformReliableBroadcast(pl, otherHosts, currentHost);
+        //UniformReliableBroadcast urb = new UniformReliableBroadcast(pl, otherHosts, currentHost);
+        FifoBroadcast fifo = new FifoBroadcast(pl, otherHosts, currentHost);
 
-        currentHost.init(nMsgs, printWriter, urb);
+        currentHost.init(nMsgs, printWriter, fifo);
 
         System.out.println("Broadcasting and delivering messages...\n");
 
@@ -109,32 +102,11 @@ public class Main {
 
         System.out.println("Expecting :" + expectedMsgs + " messages");
 
-        System.out.println("Config type :" + configType );
+        System.out.println("Config type :" + configType);
 
-
-
-        if(configType == "pl"){
-/*            Host dstHost = parser.getHostFromID(dstID);
-            if(currentHost.getId() != dstID){
-                currentHost.start();
-            }
-            else {
-                System.out.println("Receiving...");
-                currentHost.receive();
-            }*/
-        } else if(configType == "fifo"){
-            currentHost.start();
-            System.out.println("Receiving...");
-            //currentHost.receive(pl);
-        }
-
-
-
-
+        currentHost.start();
 
         System.out.println("Signaling end of broadcasting messages");
-
-
 
 
         // After a process finishes broadcasting,
