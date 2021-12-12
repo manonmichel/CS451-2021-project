@@ -15,19 +15,18 @@ public class BestEffortBroadcast implements Broadcast, Serializable {
 
 
     public BestEffortBroadcast(PerfectLink pl, List<Host> hosts, Broadcast broadcastMethod) {
-        this.perfectLink = pl;
-        pl.setBroadcastMethod(this);
+
         this.hosts = new ArrayList<>(hosts);
         this.broadcastMethod = broadcastMethod;
+        this.perfectLink = pl;
+        pl.setBroadcastMethod(this);
 
     }
 
     public void broadcast(Message msg) {
 
         for (Host receivingHost : hosts) {
-            Message msgCopy = new Message(msg.getSeqNumber(), msg.getContent(), msg.getMsgType(), msg.getSrcHost(), receivingHost);
-            perfectLink.send(msgCopy);
-
+            perfectLink.send(msg, receivingHost);
         }
 
     }
@@ -38,7 +37,4 @@ public class BestEffortBroadcast implements Broadcast, Serializable {
 
     }
 
-    public PerfectLink getPerfectLink() {
-        return perfectLink;
-    }
 }

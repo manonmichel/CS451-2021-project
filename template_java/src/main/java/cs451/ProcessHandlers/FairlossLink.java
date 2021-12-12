@@ -6,11 +6,16 @@ import cs451.Messages.Message;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.*;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 
-public class FairlossLink implements Serializable {
+public class FairlossLink {
 
     private static final int MAX_BYTES = 65535;
+
+    private final int MAX_CACHE_SIZE = 200;
 
     private DatagramSocket socket;
 
@@ -20,7 +25,7 @@ public class FairlossLink implements Serializable {
     private final String ip;
     private final int id;
 
-    private final HashMap<Message, byte[]> cache = new HashMap(); // cache to avoid reserializing messages
+    private final HashMap<Message, byte[]> cache = new HashMap(MAX_CACHE_SIZE); // cache to avoid reserializing messages
 
     public FairlossLink(Host currentHost) {
 
@@ -46,20 +51,20 @@ public class FairlossLink implements Serializable {
     public Message receive() {
 
 
-        try {
+/*        try {
             socket.setSoTimeout(timeout);
         } catch (SocketException e) {
             e.printStackTrace();
-        }
+        }*/
 
         byte[] msg = new byte[MAX_BYTES];
         DatagramPacket udpPacket = new DatagramPacket(msg, msg.length);
         try {
             socket.receive(udpPacket);
-        } catch (SocketTimeoutException e) {
+        } /*catch (SocketTimeoutException e) {
             // socket timeout, handles the case where message was sent before receiving processes were launched
             return null;
-        } catch (IOException e) {
+        } */catch (IOException e) {
             e.printStackTrace();
         }
         if (udpPacket.getData() == null) {
@@ -86,6 +91,17 @@ public class FairlossLink implements Serializable {
             socket.send(udpPacket);
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public void reduceCache() {
+        if (cache.size() > MAX_CACHE_SIZE) {
+            List<Message> cacheKeySet = new ArrayList<>(cache.keySet());
+            Collections.sort(cacheKeySet, Message.messageComparator);
+
+            for (int i = 0; i < 50; i++) {
+                cache.remove(cacheKeySet.get(i));
+            }
         }
     }
 }

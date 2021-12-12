@@ -77,6 +77,7 @@ public class HostsParser {
         return hosts;
     }
 
+
     class HostsComparator implements Comparator<Host> {
 
         public int compare(Host a, Host b) {

@@ -9,8 +9,8 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Host implements Serializable {
 
@@ -21,23 +21,25 @@ public class Host implements Serializable {
     private int port = -1;
 
     // Keeps track of sent messages and whether they were acked or not
-    private transient final HashMap<String, Boolean> sent = new HashMap();
+    private transient final List<Message> sent = Collections.synchronizedList(new ArrayList<>());
     // Keeps track of received messages
-    private transient final HashSet<String> received = new HashSet<>();
+    public transient List<Message> received = Collections.synchronizedList(new ArrayList<>());
 
     private transient PrintWriter printWriter;
+    private static ConcurrentLinkedQueue<String> outputBuffer;
+
 
     private transient Broadcast broadcastMethod;
-    private transient PerfectLink perfectLink;
 
     private int nMsgs;
 
 
-    public void init(int nMsgs, PrintWriter printWriter, Broadcast broadcastMethod) {
+    public void init(int nMsgs, PrintWriter printWriter, Broadcast broadcastMethod, ConcurrentLinkedQueue outputBuffer) {
         this.nMsgs = nMsgs;
         this.printWriter = printWriter;
+        this.outputBuffer = outputBuffer;
+
         this.broadcastMethod = broadcastMethod;
-        this.perfectLink = broadcastMethod.getPerfectLink();
     }
 
     public boolean populate(String idString, String ipString, String portString) {
@@ -85,38 +87,43 @@ public class Host implements Serializable {
     public void start() {
         for (int i = 1; i <= nMsgs; i++) {
 
-            Message m = new Message(i, Integer.toString(i), MessageType.BROADCAST, this);
+            String msgSign = Message.makeSignature(this.id, i);
+            Message m = new Message(i, Integer.toString(i), MessageType.BROADCAST, msgSign);
 
-            printWriter.println("b " + i);
+            //printWriter.println("b " + i);
+            outputBuffer.add("b " + i);
+
             System.out.println("b " + i);
-
-            String sign = m.getSignature();
-            sent.put(sign, false);
 
             // URB
             broadcastMethod.broadcast(m);
         }
 
-        this.receive();
+        while (sent.size() < nMsgs) {
+        }
+
+        System.out.println("Host " + id + " done");
 
     }
 
 
     public void deliver(Message msg) {
-        if (!received.contains(msg.getSignature())) {
-            received.add(msg.getSignature());
+        received.add(msg);
 
-            printWriter.println("d " + msg.getSrcHost().getId() + " " + msg.getSeqNumber());
-            System.out.println("d " + msg.getSrcHost().getId() + " " + msg.getSeqNumber() + " | " + msg.getSignature());
+        if (msg.getSignature().charAt(0) == this.id) {
+            sent.add(msg);
         }
+        //printWriter.println("d " + msg.getSrcHost().getId() + " " + msg.getSeqNumber());
+        outputBuffer.add("d " + msg.getSignature().charAt(0) + " " + msg.getSignature().substring(2));
+        System.out.println("d " + msg.getSignature().charAt(0) + " " + msg.getSignature().substring(2));
     }
 
 
-    public void receive() {
+/*    public void receive() {
         while (true) {
             perfectLink.receive();
         }
-    }
+    }*/
 
 
     @Override

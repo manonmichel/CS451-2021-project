@@ -1,5 +1,7 @@
 package cs451;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 public class Parser {
@@ -70,8 +72,12 @@ public class Parser {
         return configParser.getPath();
     }
 
-    public String getConfigType(){
-        return configParser.getConfigType();
+    public String getConfigType(int nHosts){
+        return configParser.getConfigType(nHosts);
+    }
+
+    public HashMap<Integer, HashSet<Integer>> getCausalDependencies(int numberOfHosts){
+        return configParser.getCausalDependencies(numberOfHosts);
     }
 
     public int getnMsgs(){

@@ -1,14 +1,19 @@
 package cs451;
 
 import cs451.Broadcast.FifoBroadcast;
+import cs451.Broadcast.LocalizedCausalBroadcast;
+import cs451.Broadcast.UniformReliableBroadcast;
 import cs451.ProcessHandlers.PerfectLink;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
 public class Main {
     private static PrintWriter printWriter = new PrintWriter(System.out);
+    public static ConcurrentLinkedQueue<String> outputBuffer = new ConcurrentLinkedQueue<>();
+
 
     private static void handleSignal() {
         //immediately stop network packet processing
@@ -17,6 +22,20 @@ public class Main {
         //write/flush output file if necessary
         System.out.println("Writing output.");
         printWriter.close();
+        try {
+            File outputFile = new File(outputBuffer.poll());
+            System.out.println(outputFile);
+            FileOutputStream fos = new FileOutputStream(outputFile);
+            OutputStreamWriter osw = new OutputStreamWriter(fos);
+            while (outputBuffer.peek() != null) {
+                osw.write(outputBuffer.poll());
+                osw.write("\n");
+            }
+            osw.close();
+            fos.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private static void initSignalHandlers() {
@@ -34,8 +53,9 @@ public class Main {
 
         int nMsgs = 0;
         int dstID = -1;
+        int nHosts = parser.hosts().size();
 
-        String configType = parser.getConfigType();
+        String configType = parser.getConfigType(nHosts);
         if (configType.equals("pl")) {
             nMsgs = parser.getnMsgs();
             dstID = parser.getProcessIndex();
@@ -86,13 +106,17 @@ public class Main {
         PerfectLink pl = new PerfectLink(currentHost);
 
         printWriter = new PrintWriter(new FileWriter(parser.output()));
+        outputBuffer.add(parser.output());
 
-        //UniformReliableBroadcast urb = new UniformReliableBroadcast(pl, otherHosts, currentHost);
-        FifoBroadcast fifo = new FifoBroadcast(pl, otherHosts, currentHost);
+        if(configType == "fifo"){
+            FifoBroadcast fifo = new FifoBroadcast(pl, otherHosts, currentHost);
+            currentHost.init(nMsgs, printWriter, fifo, outputBuffer);
 
-        currentHost.init(nMsgs, printWriter, fifo);
+        } else if (configType == "lcausal"){
+            LocalizedCausalBroadcast lcausal = new LocalizedCausalBroadcast(pl, otherHosts, currentHost, parser.getCausalDependencies(nHosts));
+            currentHost.init(nMsgs, printWriter, lcausal, outputBuffer);
+        }
 
-        System.out.println("Broadcasting and delivering messages...\n");
 
         int expectedMsgs = nMsgs * otherHosts.size();
 
@@ -103,6 +127,8 @@ public class Main {
         System.out.println("Expecting :" + expectedMsgs + " messages");
 
         System.out.println("Config type :" + configType);
+
+        System.out.println("Broadcasting and delivering messages...\n");
 
         currentHost.start();
 
