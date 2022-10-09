@@ -13,12 +13,12 @@ public class Message implements Serializable {
     private final String signature;
     private final String content;
     private final MessageType msgType;
-    private Host srcHost;
-    private Host dstHost;
-    private UUID uid;
+    private Host srcHost = null;
+    private Host dstHost = null;
+    private UUID uid = null;
 
     //Optional, used for Localized Causal broadcast
-    private int[] vectorClock;
+    private int[] vectorClock = null;
 
 
     public Message(int SeqNumber, String content, MessageType msgType, String msgSign) {
@@ -82,14 +82,22 @@ public class Message implements Serializable {
     }
 
     public int[] getVectorClock(){
-        return this.vectorClock;
+        if(this.vectorClock == null){
+            return new int[0];
+        } else{
+            return this.vectorClock;
+        }
+
+
     }
 
 
     // ---------------------------- UTILS -------------------------------
 
     public Message addNetworkLayer(Host srcHost, Host dstHost, UUID uid){
-        return new Message(this.SeqNumber, this.content, this.msgType, this.signature, srcHost, dstHost, uid);
+        Message netMsg =  new Message(this.SeqNumber, this.content, this.msgType, this.signature, srcHost, dstHost, uid);
+        netMsg.setVectorClock(netMsg.getVectorClock());
+        return netMsg;
     }
 
     public Message genAck() {
@@ -100,26 +108,31 @@ public class Message implements Serializable {
             System.out.println("WTF");
         }
         Message ack = new Message(this.SeqNumber, this.content, MessageType.ACK, this.signature, this.dstHost, this.srcHost, this.uid);
+        ack.setVectorClock(this.getVectorClock());
         return ack;
     }
 
     @Override
     public String toString() {
-        return msgType + " " + signature + " " + srcHost.getId() + " " + dstHost.getId();
+        return msgType + " " + signature ;
     }
 
 
     // ---------------------------- COMPARATORS -------------------------------
 
-    @Override
+/*    @Override
     public boolean equals(Object m1) {
         if (m1 instanceof Message) {
             Message otherMsg = (Message) (m1);  // Removed comparison of message type because otherwise the comparison needed in PerfectLinks is faulty
-            return this.signature == otherMsg.getSignature() && this.msgType == otherMsg.getMsgType() && this.content == otherMsg.getContent() && this.srcHost.equals(otherMsg.getSrcHost()) && this.dstHost.equals(otherMsg.getDstHost());
+            return this.signature == otherMsg.getSignature() &&
+                    this.msgType == otherMsg.getMsgType() &&
+                    this.content == otherMsg.getContent() &&
+                    this.srcHost.equals(otherMsg.getSrcHost()) &&
+                    this.dstHost.equals(otherMsg.getDstHost());
         } else {
             return false;
         }
-    }
+    }*/
 
     @Override
     public int hashCode() {

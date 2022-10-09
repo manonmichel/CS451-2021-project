@@ -61,7 +61,9 @@ public class Main {
             dstID = parser.getProcessIndex();
         } else if (configType.equals("fifo")) {
             nMsgs = parser.getnMsgs();
-        } else {
+        } else if (configType.equals("lcausal")) {
+            nMsgs = parser.getnMsgs();
+        }else {
             System.out.println("Unknown Config");
         }
 
@@ -95,9 +97,13 @@ public class Main {
         System.out.println("Config content:");
         System.out.println("===============");
         System.out.println("Number of messages each process should send: " + nMsgs);
-        System.out.println("Index of the process that should receive the messages: " + dstID + "\n");
+        if (configType == "lcausal"){
+            System.out.println("Dependencies: " + parser.getCausalDependencies(nHosts) + "\n");
+        }
+
 
         System.out.println("Doing some initialization\n");
+
 
         Host currentHost = parser.getCurrentHost();
         List<Host> otherHosts = new ArrayList<Host>(parser.hosts());
@@ -108,12 +114,13 @@ public class Main {
         printWriter = new PrintWriter(new FileWriter(parser.output()));
         outputBuffer.add(parser.output());
 
+
         if(configType == "fifo"){
-            FifoBroadcast fifo = new FifoBroadcast(pl, otherHosts, currentHost);
+            FifoBroadcast fifo = new FifoBroadcast(pl, parser.hosts(), currentHost);
             currentHost.init(nMsgs, printWriter, fifo, outputBuffer);
 
         } else if (configType == "lcausal"){
-            LocalizedCausalBroadcast lcausal = new LocalizedCausalBroadcast(pl, otherHosts, currentHost, parser.getCausalDependencies(nHosts));
+            LocalizedCausalBroadcast lcausal = new LocalizedCausalBroadcast(pl, parser.hosts(), currentHost, parser.getCausalDependencies(nHosts));
             currentHost.init(nMsgs, printWriter, lcausal, outputBuffer);
         }
 

@@ -15,7 +15,7 @@ public class FairlossLink {
 
     private static final int MAX_BYTES = 65535;
 
-    private final int MAX_CACHE_SIZE = 200;
+    private final int MAX_CACHE_SIZE = 400;
 
     private DatagramSocket socket;
 
@@ -99,7 +99,7 @@ public class FairlossLink {
             List<Message> cacheKeySet = new ArrayList<>(cache.keySet());
             Collections.sort(cacheKeySet, Message.messageComparator);
 
-            for (int i = 0; i < 50; i++) {
+            for (int i = 0; i < 100; i++) {
                 cache.remove(cacheKeySet.get(i));
             }
         }

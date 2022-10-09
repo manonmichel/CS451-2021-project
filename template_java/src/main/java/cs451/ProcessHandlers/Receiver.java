@@ -28,13 +28,33 @@ public class Receiver extends Thread{
 
     @Override
     public void run() {
+        long startTime = System.currentTimeMillis();
+        int temp = 0;
         while (true) {
             //Message msg = null;
 
+            long currentTime = System.currentTimeMillis();
+
+
+
             Message msg = fll.receive();
 
-            if (msg == null)
+/*
+            if(25000 > currentTime-startTime && currentTime-startTime > 23000 && temp < 20 ){
+                System.out.println("fl - received: " + msg + " | uid: " + msg.getUid());
+
+                System.out.println("fl - received broadcasts : " + receivedBroadcast.contains(msg.getUid()));
+
+                temp++ ;
+            }
+*/
+
+
+
+
+            if (msg == null){
                 break;
+            }
 
 
             switch (msg.getMsgType()) {

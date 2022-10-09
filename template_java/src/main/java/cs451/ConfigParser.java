@@ -42,26 +42,29 @@ public class ConfigParser {
     }
 
     public HashMap<Integer, HashSet<Integer>> getCausalDependencies(int numberOfHosts){
-        HashMap<Integer, HashSet<Integer>> dependencies = new HashMap<Integer, HashSet<Integer>>();
-        for(Integer hostID : dependencies.keySet()){
+
+        HashMap<Integer, HashSet<Integer>> dependencies = new HashMap<Integer, HashSet<Integer>>(numberOfHosts);
+        for(int hostID = 1; hostID <= numberOfHosts; hostID++){
             String[] hostLine = allContent.get(hostID).split(" ");
             HashSet<Integer> lineAsInts = new HashSet<>(Arrays.stream(hostLine).mapToInt(Integer::parseInt).boxed().collect(Collectors.toSet()));
             lineAsInts.remove(hostID); // Remove current host from set of dependencies
 
             dependencies.put(hostID, lineAsInts);
         }
+
         return dependencies;
     }
 
     public String getConfigType(int numberOfHosts) {
-        if (firstLine.length == 2) {
-            return "pl";
-        } else if (firstLine.length == 1) {
-            return "fifo";
-        } else if (allContent.size() == numberOfHosts + 1){
-            return "lcausal";
-        } else {
+        if(allContent.size() == 0){
+            System.out.println("Empty Config File");
             return "unknown";
+        }else if (firstLine.length == 2 && allContent.size() == 1) {
+            return "pl";
+        } else if (firstLine.length == 1 && allContent.size() == 1) {
+            return "fifo";
+        } else {
+            return "lcausal";
         }
     }
 }

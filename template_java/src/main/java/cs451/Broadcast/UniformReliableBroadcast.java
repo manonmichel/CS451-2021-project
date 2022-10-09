@@ -30,6 +30,8 @@ public class UniformReliableBroadcast implements Broadcast{
     // serves as a failure detector
     private final int MIN_ACK;
 
+
+
     public UniformReliableBroadcast(PerfectLink pl, List<Host> hosts, Broadcast broadcastMethod){
         this.acked = new ConcurrentHashMap<>();
         this.delivered = new ConcurrentSkipListSet<>();
@@ -67,11 +69,14 @@ public class UniformReliableBroadcast implements Broadcast{
     @Override
     public void broadcast(Message msg) {
         pending.add(msg.getSignature());
+
         beb.broadcast(msg);
     }
 
     // Must make sure that N/2 ACKS before delivering
     public void deliver(Message msg) {
+
+
         String sign = msg.getSignature();
         if(!delivered.contains(sign)){
             Host srcHost = msg.getSrcHost();
@@ -84,7 +89,9 @@ public class UniformReliableBroadcast implements Broadcast{
                     delivered.add(sign);
                     acked.remove(sign);
                     pending.remove(sign);
-                    broadcastMethod.deliver(new Message(msg.getSeqNumber(), msg.getContent(), MessageType.BROADCAST, sign)); //TODO: put this back when FIFO implemented
+                    Message msgToBroadcast = new Message(msg.getSeqNumber(), msg.getContent(), MessageType.BROADCAST, sign);
+                    msgToBroadcast.setVectorClock(msg.getVectorClock());
+                    broadcastMethod.deliver(msgToBroadcast); //TODO: put this back when FIFO implemented
                     //currentHost.deliver(new Message(msg.getSeqNumber(), msg.getContent(), MessageType.BROADCAST, sign));
                 }
             }

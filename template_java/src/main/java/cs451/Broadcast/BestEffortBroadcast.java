@@ -25,6 +25,7 @@ public class BestEffortBroadcast implements Broadcast, Serializable {
 
     public void broadcast(Message msg) {
 
+
         for (Host receivingHost : hosts) {
             perfectLink.send(msg, receivingHost);
         }
